@@ -1,112 +1,90 @@
-# :rocket: Use Azure Service Connector
+# :rocket: Azure Service Connectorを使用する
 
-Azure Service Connector helps you connect your application to other backing services. Service Connector configures the
-network settings and connection information (for example, generating environment variables) between application services
-and target backing services in management plane. Developers use their preferred SDK or library that consumes the
-connection information to do data plane operations against the target backing service.
+Azure Service Connectorは、アプリケーションを他のバックエンドサービスに接続するのに役立ちます。Service Connectorは、アプリケーションサービスとターゲットバックエンドサービス間のネットワーク設定と接続情報（環境変数の生成など）を管理プレーンで構成します。開発者は、接続情報を消費するための好みのSDKやライブラリを使用して、ターゲットバックエンドサービスに対してデータプレーン操作を行います。
 
-In this lab, you will learn how to use Azure Service Connector to connect your Java application
-to Azure Database for MySQL Flexible Server without exposing the connection string in the code. But Before we start, let's first familiarize with the fundamentals of the authentication mechanism within Azure SDK.
+このラボでは、Azure Service Connectorを使用して、コード内で接続文字列を公開せずにJavaアプリケーションをAzure Database for MySQL Flexible Serverに接続する方法を学びます。しかし、始める前に、Azure SDK内の認証メカニズムの基本を理解しましょう。
 
-## Objective
+## 目的
 
-In this module, we'll focus on four key objectives:
+このモジュールでは、以下の4つの主要な目的に焦点を当てます：
 
-1. :white_check_mark: Understand the basics of application authentication for Azure resources with Azure SDK.
-2. :bar_chart: Understand the Managed Identity and its benefits over Service Principal.
-3. :mag: Configure the backend services to use managed identity to connect to MySQL database.
-4. :airplane: Understand the concept of passwordless connection with Service Connector.
+1. :white_check_mark: Azure SDKを使用したAzureリソースのアプリケーション認証の基本を理解する。
+2. :bar_chart: マネージドIDとそのサービスプリンシパルに対する利点を理解する。
+3. :mag: MySQLデータベースに接続するためにバックエンドサービスをマネージドIDで構成する。
+4. :airplane: Service Connectorを使用したパスワードレス接続の概念を理解する。
 
 ---
 
-## :book: Basics - Application Authentication for Azure resources
+## :book: 基本 - Azureリソースのアプリケーション認証
 
-When an app needs to access an Azure resource, the app must be authenticated to Azure. This is true for all apps,
-whether deployed to Azure, deployed on-premises, or under development on a local developer workstation.
+アプリがAzureリソースにアクセスする必要がある場合、アプリはAzureに認証される必要があります。これは、Azureにデプロイされたアプリ、オンプレミスにデプロイされたアプリ、またはローカル開発者ワークステーションで開発中のアプリのすべてに当てはまります。
 
 ![DefaultAzureCredential](images/appauth.png)
 
-There are 3 approaches to authenticate an application to Azure:
+Azure��アプリケーションを認証するためのアプローチは3つあります：
 
-1. Developer account - Identity obtained from VSCode, IntelliJ, Azure CLI or PowerShell
-2. Service Principal - Identity obtained from Azure Entra ID
-3. Managed Identity - Identity obtained from Azure Managed Identity
+1. 開発者アカウント - VSCode、IntelliJ、Azure CLI、またはPowerShellから取得されたID
+2. サービスプリンシパル - Azure Entra IDから取得されたID
+3. マネージドID - AzureマネージドIDから取得されたID
 
-Choosing between a service principal and managed identity depends on the specific scenario. However, the typical preference is to start with managed identity in all possible scenarios before falling back onto the service principal when managed identity isn't supported. Good example of it is, Apps hosted outside of Azure (for example on-premises apps) that need to connect to
-Azure services.
+サービスプリンシパルとマネージドIDのどちらを選択するかは、特定のシナリオに依存します。ただし、一般的な優先順位は、可能なすべてのシナリオでまずマネージドIDを使用し、マネージドIDがサポートされていない場合にサービスプリンシパルに戻ることです。良い例としては、Azure外でホストされているアプリ（たとえば、オンプレミスのアプリ）がAzureサービスに接続する必要がある場合です。
 
-## :book: Basics - Why Azure Managed Identity?
+## :book: 基本 - なぜAzureマネージドIDなのか？
 
-Service Principal traditionally has been a common way to authenticate an application to Azure resources, but it has major caveat: it's just a combination of an ID and secret. While storing secrets securely in the Azure Key Vault is possible, accessing the Azure Key Vault through a service principal poses a security risk.
+サービスプリンシパルは、伝統的にAzureリソースにアプリケーションを認証する一般的な方法でしたが、重大な欠点があります：それは単なるIDとシークレットの組み合わせです。Azure Key Vaultにシークレットを安全に保存することは可能ですが、サービスプリンシパルを介してAzure Key Vaultにアクセスすることはセキュリティリスクを引き起こします。
 
-Managed Identifies alleviate this problem by providing an automatically-managed identity within Microsoft Entra ID. This capability allows applications to use managed identities to obtain Microsoft Entra tokens without having to manually manage any credentials.
+マネージドIDは、Microsoft Entra ID内で自動的に管理されるIDを提供することでこの問題を軽減します。この機能により、アプリケーションはマネージドIDを使用してMicrosoft Entraトークンを取得し、手動で資格情報を管理する必要がなくなります。
 
-There are two types of managed identities:
+マネージドIDには2つのタイプがあります：
 
-- System-assigned. Some Azure resources, such as virtual machines allow you to enable a managed identity directly on the
-  resource. When you enable a system-assigned managed identity:
-    - A service principal of a special type is created in Microsoft Entra ID for the identity. The service principal is
-      tied to the lifecycle of that Azure resource. When the Azure resource is deleted, Azure automatically deletes the
-      service principal for you.
-    - By design, only that Azure resource can use this identity to request tokens from Microsoft Entra ID.
-    - You authorize the managed identity to have access to one or more services.
-- User-assigned. You may also create a managed identity as a standalone Azure resource. You can create a user-assigned
-  managed identity and assign it to one or more Azure Resources. When you enable a user-assigned managed identity:
-    - A service principal of a special type is created in Microsoft Entra ID for the identity. The service principal is
-      managed separately from the resources that use it.
-    - User-assigned identities can be used by multiple resources.
-    - You authorize the managed identity to have access to one or more services.
+- システム割り当て。仮想マシンなどの一部のAzureリソースでは、リソース上でマネージドIDを有効にすることができます。システム割り当てマネージドIDを有効にすると：
+  - 特殊なタイプのサービスプリンシパルがMicrosoft Entra IDに作成されます。このサービスプリンシパルは、そのAzureリソースのライフサイクルに結び付けられています。Azureリソースが削除されると、Azureは自動的にサービスプリンシパルを削除します。
+  - 設計上、そのAzureリソースのみがこのIDを使用してMicrosoft Entra IDからトークンを要求できます。
+  - マネージドIDに1つ以上のサービスへのアクセス権を付与します。
+- ユーザー割り当て。スタンドアロンのAzureリソースとしてマネージドIDを作成することもできます。ユーザー割り当てマネージドIDを作成し、1つ以上のAzureリソースに割り当てることができます。ユーザー割り当てマネージドIDを有効にすると：
+  - 特殊なタイプのサービスプリンシパルがMicrosoft Entra IDに作成されます。このサービスプリンシパルは、使用するリソースとは別に管理されます。
+  - ユーザー割り当てマネージドIDは複数のリソースで使用できます。
+  - マネージドIDに1つ以上のサービスへのアクセス権を付与します。
 
-## :book: Basics - Spring Cloud Azure(Azure SDK for Spring Boot)
+## :book: 基本 - Spring Cloud Azure（Spring Boot用Azure SDK）
 
-Spring Cloud Azure is an open-source project that provides seamless Spring integration with Azure. When it comes to
-authentication, Spring Cloud Azure uses `DefaultAzureCredential` which is intended to provide the simplified
-authentication mechanism for development and production environments. It is a chain of credentials that is tried in order
-automatically, and the first available credential is used to authenticate. This approach enables your app to use
-different authentication methods in different environments (local dev vs. production) without implementing
-environment-specific code.
+Spring Cloud Azureは、AzureとのシームレスなSpring統合を提供するオープンソースプロジェクトです。認証に関しては、Spring Cloud Azureは`DefaultAzureCredential`を使用します。これは、開発環境と本番環境のための簡素化された認証メカニズムを提供することを目的としています。これは、順番に試行される資格情報のチェーンであり、最初に利用可能な資格情報が認証に使用されます。このアプローチにより、アプリは環境固有のコードを実装することなく、異なる環境（ローカル開発と本番環境）で異なる認証方法を使用できます。
 
 ![DefaultAzureCredential](images/DefaultAzureCredential.png)
 
-To configure managed identity with Spring Cloud Azure, the following properties must be set in your `application.properties`
-file:
+Spring Cloud AzureでマネージドIDを構成するには、`application.properties`ファイルに次のプロパティを設定する必要があります：
 
 ```properties
 spring.cloud.azure.credential.managed-identity-enabled=true
-spring.cloud.azure.credential.client-id=<Client ID of Managed Identity>
+spring.cloud.azure.credential.client-id=<マネージドIDのクライアントID>
 ```
 
-## :book: Basics - Passwordless Connection with Service Connector
+## :book: 基本 - Service Connectorを使用したパスワードレス接続
 
-Passwordless connections use managed identities to access Azure services. With this approach, you don't have to manually
-track and manage secrets for managed identities. These tasks are securely handled internally by Azure.
+パスワードレス接続は、マネージドIDを使用してAzureサービスにアクセスします。このアプローチでは、マネージドIDのシークレットを手動で追跡および管理する必要がありません。これらのタスクはAzureによって内部的に安全に処理されます。
 
-Service Connector enables managed identities in app hosting services like Azure Spring Apps, Azure App Service, and
-Azure Container Apps. Service Connector also configures database services, such as Azure Database for PostgreSQL, Azure
-Database for MySQL, and Azure SQL Database, to accept managed identities.
+Service Connectorは、Azure Spring Apps、Azure App Service、およびAzure Container AppsなどのアプリホスティングサービスでマネージドIDを有効にします。Service Connectorは、Azure Database for PostgreSQL、Azure Database for MySQL、およびAzure SQL Databaseなどのデータベースサービスを構成して、マネージドIDを受け入れるようにします。
 
-### Create Service Connector
+### Service Connectorの作成
 
-Previously deployed backend services are using in-memory database. In this chapter, we will create Service Connector to
-connect the backend services to Azure Database for MySQL Flexible Server as the database.
+以前にデプロイされたバックエンドサービスはインメモリデータベースを使用しています。この章では、Service Connectorを作成して、バックエンドサービスをデータベースとしてAzure Database for MySQL Flexible Serverに接続します。
 
-Let's create a Managed Identity for the MySQL database using Azure CLI.
+まず、Azure CLIを使用してMySQLデータベースのためのマネージドIDを作成します。
 
 ```bash
 az identity create --name aca-mysql-mi
 ```
 
-Next, we start creating Service Connector from [Azure Portal](https://portal.azure.com/). We will start with
-vets-service.
-Create a Connection following the screen below.
+次に、[Azureポータル](https://portal.azure.com/)からService Connectorの作成を開始します。まず、`vets-service`から始めます。
+以下の画面に従って接続を作成します。
 
 ![DefaultAzureCredential](images/serviceconnector-1.png)
 
-Choose the Managed Identity created in the previous step.
+前のステップで作成したマネージドIDを選択します。
 
 ![DefaultAzureCredential](images/serviceconnector-2.png)
 
-On `Revew + Create` page, it shows the command to create the Service Connector which would look like below.
+`Revew + Create`ページで、Service Connectorを作成するコマンドが表示されます。以下のようになります。
 
 ```bash
 az containerapp connection create mysql-flexible \
@@ -118,34 +96,31 @@ az containerapp connection create mysql-flexible \
 -c vets-service-build42982
 ```
 
-After running the command, the Service Connector will configure MySQL with a password-free connection, opens the firewall rule, and injects several environment variables for the `springBoot` service type specified in the CLI command above. Service Connector injects different environment variable depending on the given service type and the target service. Look at the [Azure Service Bus](https://learn.microsoft.com/en-us/azure/service-connector/how-to-integrate-service-bus?tabs=dotnet) as an example. 
+コマンドを実行すると、Service ConnectorはMySQLをパスワードなしの接続で構成し、ファイアウォールルールを開き、上記のCLIコマンドで指定された`springBoot`サービスタイプのためにいくつかの環境変数を注入します。Service Connectorは、指定されたサービスタイプとターゲットサービスに応じて異なる環境変数を注入します。例として[Azure Service Bus](https://learn.microsoft.com/en-us/azure/service-connector/how-to-integrate-service-bus?tabs=dotnet)を参照してください。
 
-Return to the Azure Portal to check your newly created Service Connector.
+Azureポータルに戻り、新しく作成されたService Connectorを確認します。
 
-Do note the injected the environment variable `spring.datasource.azure.passwordless-enabled=true`. It enables Spring
-Cloud Azure to use the managed identity to connect to the MySQL database.
+注入された環境変数`spring.datasource.azure.passwordless-enabled=true`に注意してください。これにより、Spring Cloud AzureがマネージドIDを使用してMySQLデータベースに接続できるようになります。
 
 ![DefaultAzureCredential](images/serviceconnector-3.png)
 
-Finally, specify the SPRING_ACTIVE_PROFILE to `passwordless` in the vets-service:
+最後に、`vets-service`でSPRING_ACTIVE_PROFILEを`passwordless`に指定します：
 
 ```bash
 az containerapp update --name vets-service --set-env-vars SPRING_PROFILES_ACTIVE=passwordless
 ```
 
 > 💡 [!NOTE]
-> `passwordless` profile will automatically create tables on MySQL. Use client tools like MySQL Workbench to see the
-> tables.
+> `passwordless`プロファイルはMySQLにテーブルを自動的に作成します。MySQL Workbenchなどのクライアントツールを使用してテーブルを確認してください。
 
 > [!IMPORTANT]
-> **Repeat the same steps for customers-service and visits-service**
+> **同じ手順をcustomers-serviceおよびvisits-serviceにも繰り返してください**
 
 
 
-## :notebook_with_decorative_cover: Summary
+## :notebook_with_decorative_cover: まとめ
 
 ---
 
 ➡️
-:arrow_forward::️ Up
-Next : [07 - Monitoring Java Applications on Azure Container Apps](../07-monitoring-java-aca/README.md)
+:arrow_forward::️ 次へ : [07 - Azure Container AppsでJavaアプリケーションを監視する](../07-monitoring-java-aca/README.md)

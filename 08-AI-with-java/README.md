@@ -1,18 +1,18 @@
-# Create AI-infused Java Apps with Azure OpenAI and Spring AI
+# Azure OpenAIとSpring AIを使用してAIを組み込んだJavaアプリを作成する
 
-In this chapter, we will explore how to create AI-infused Java applications using Azure OpenAI and Spring AI. We will start by configuring our Spring Boot application to connect with Azure OpenAI. Next, we will implement a simple chatbot using Azure OpenAI's GPT-4o model to demonstrate how AI can be seamlessly integrated into Java applications. Additionally, we will cover function calling with Spring AI, allowing our application to perform complex tasks by leveraging AI models.
+この章では、Azure OpenAIとSpring AIを使用してAIを組み込んだJavaアプリケーションを作成する方法を探ります。まず、Spring BootアプリケーションをAzure OpenAIに接続するように構成します。次に、Azure OpenAIのGPT-4oモデルを使用してシンプルなチャットボットを実装し、AIをJavaアプリケーションにシームレスに統合する方法を示します。さらに、Spring AIを使用した関数呼び出しをカバーし、AIモデルを活用して複雑なタスクを実行するアプリケーションを作成します。
 
 ---
 
-In this module, we'll focus on two key objectives:
-1. :white_check_mark: Integrate Azure OpenAI with Chatbot.
-2. :bar_chart: Use Function Calling to implement basic RAG with Spring AI.
+このモジュールでは、以下の2つの主要な目的に焦点を当てます：
+1. :white_check_mark: Azure OpenAIをチャットボットに統合する。
+2. :bar_chart: 関数呼び出しを使用してSpring AIで基本的なRAGを実装する。
 
-## Azure OpenAI Integration with Chatbot
+## チャットボットとのAzure OpenAI統合
 
-We will first integrate Azure OpenAI with our Spring Boot application to create a chatbot. Bicep that we run with `azd up` in our very first lab creates the Azure OpenAI deployment named as `gpt-4o`. We will use this deployment to provide the chat experience to PetClinic application.
+まず、Azure OpenAIをSpring Bootアプリケーションに統合してチャットボットを作成します。最初のラボで`azd up`を実行した際に作成されたBicepは、`gpt-4o`という名前のAzure OpenAIデプロイメントを作成します。このデプロイメントを使用して、PetClinicアプリケーションにチャット体験を提供します。
 
-Go to `spring-petclinic-chats-service` and open the `application.yml` file. Replace the ${AZURE_OPENAI_API_KEY} and ${AZURE_OPENAI_ENDPOINT} with your Azure OpenAI API key and endpoint.
+`spring-petclinic-chats-service`に移動し、`application.yml`ファイルを開きます。${AZURE_OPENAI_API_KEY}と${AZURE_OPENAI_ENDPOINT}をAzure OpenAI APIキーとエンドポイントに置き換えます。
 
 ```yaml
 spring:
@@ -33,47 +33,45 @@ spring:
 
 ```
 
-### Prompt Engineering with GitHub Copilot
+### GitHub Copilotを使用したプロンプトエンジニアリング
 
-What empowering GitHub Copilot under the hood is specially trained LLM model that can generate code snippets based on the context. As Spring AI is very new project and latest knowledge cutoff date for Copilot is Oct 2023, it may not have the knowledge about Spring AI. To overcome this limitation, we can use the prompt engineering to provide the context to Copilot. For that, there is a markdown file `CONTEXT.md` which describes the basic usage of Spring AI with Azure Open AI. All you need to do is to supply this as part of your prompt. 
+GitHub Copilotの背後にあるのは、特別に訓練されたLLMモデルであり、コンテキストに基づいてコードスニペットを生成できます。Spring AIは非常に新しいプロジェクトであり、Copilotの最新の知識カットオフ日は2023年10月であるため、Spring AIについての知識がない可能性があります。この制限を克服するために、プロンプトエンジニアリングを使用してCopilotにコンテキストを提供できます。そのために、Spring AIとAzure Open AIの基本的な使用法を説明する`CONTEXT.md`というマークダウンファイルがあります。このファイルをプロンプトの一部として提供するだけです。
 
-For VSCode, you can add the file manually:
+VSCodeの場合、ファイルを手動で追加できます：
 ![VS Code](images/vscode-1.png)
 
-For JetBrains IntelliJ IDEA, you need to first open the file as a tab then add it:
+JetBrains IntelliJ IDEAの場合、まずタブとしてファイルを開いてから追加する必要があります：
 ![IntelliJ IDEA](images/jetbrains-1.png)
 
-Now, you need to prompt GitHub Copilot to integrate with Azure OpenAI endpoint. Here is the sample prompt that you can use:
+次に、GitHub CopilotにAzure OpenAIエンドポイントと統合するようにプロンプトを設定する必要があります。以下は使用できるサンプルプロンプトです：
 
 ```text
-1. Create an POST endpoint at '/chat' that provides the chat completion
-2. Use AzureOpenAiChatModel to do the chat completion with Azure OpenAI Endpoint
-3. Use User Prompt and System Prompt
+1. '/chat'でチャット完了を提供するPOSTエンドポイントを作成する
+2. AzureOpenAiChatModelを使用してAzure OpenAIエンドポイントでチャット完了を行う
+3. ユーザープロンプトとシステムプロンプトを使用する
 ```
 
-> :information_source: Make sure you add the proper files(`CONTEXT.md` and `ChatController.java`) before prompting GitHub Copilot.
+> :information_source: プロンプトを設定する前に、適切なファイル（`CONTEXT.md`と`ChatController.java`）を追加してください。
 
 ![GitHub Copilot Prompt](images/prompt-1.png)
 
-We will slightly change the system prompt to make it more specific to our application, PetClinic. Here is the updated prompt:
+システムプロンプトを少し変更して、アプリケーションであるPetClinicに特化させます。以下は更新されたプロンプトです：
 
 ```text
-You are a friendly AI assistant designed to help with the management of a veterinarian pet clinic called Spring Petclinic.
-Your job is to answer questions about and to perform actions on the user's behalf, mainly around
-veterinarians, owners, owners' pets and owners' visits.
-You are required to answer an a professional manner. If you don't know the answer, politely tell the user
-you don't know the answer, then ask the user a followup question to try and clarify the question they are asking.
-If you do know the answer, provide the answer but do not provide any additional followup questions.
-When dealing with vets, if the user is unsure about the returned results, explain that there may be additional data that was not returned.
-Only if the user is asking about the total number of all vets, answer that there are a lot and ask for some additional criteria.
-For owners, pets or visits - provide the correct data.
+あなたはSpring Petclinicという獣医ペットクリニックの管理を支援するために設計されたフレンドリーなAIアシスタントです。
+あなたの仕事は、ユーザーのリクエストに応じて質問に答えたり、ユーザーの代わりにアクションを実行したりすることです。主に獣医、オーナー、オーナーのペット、オーナーの訪問に関するものです。
+プロフェッショナルな態度で回答する必要があります。答えがわからない場合は、丁寧にユーザーに答えがわからないことを伝え、次にユーザーにフォローアップの質問をして、彼らが尋ねている質問を明確にしようとします。
+答えがわかる場合は、答えを提供しますが、追加のフォローアップの質問は提供しません。
+獣医に関しては、ユーザーが返された結果に不確かである場合、返されなかった追加のデータがある可能性があることを説明します。
+すべての獣医の総数についてユーザーが尋ねている場合のみ、たくさんいると答え、追加の基準を求めます。
+オーナー、ペット、または訪問に関しては、正しいデータを提供します。
 ```
 
-Full source code would look like below:
+完全なソースコードは以下のようになります：
 
 <details markdown="block">
 
-### Completed Source Code
+### 完成したソースコード
 
 ```java
 package org.springframework.samples.petclinic.chats;
@@ -104,13 +102,13 @@ public class ChatController {
     @PostMapping("/chatclient")
     public String chat(@RequestBody String userPrompt) {
         Message systemMessage = new SystemPromptTemplate("""
-         You are a friendly AI assistant designed to help with the management of a veterinarian pet clinic called Spring Petclinic.
-         Your job is to answer questions about and to perform actions on the user's behalf, mainly around veterinarians, owners, owners' pets and owners' visits.
-         You are required to answer an a professional manner. If you don't know the answer, politely tell the user you don't know the answer, then ask the user a followup question to try and clarify the question they are asking.
-         If you do know the answer, provide the answer but do not provide any additional followup questions.
-         When dealing with vets, if the user is unsure about the returned results, explain that there may be additional data that was not returned.
-         Only if the user is asking about the total number of all vets, answer that there are a lot and ask for some additional criteria.
-         For owners, pets or visits - provide the correct data.
+         あなたはSpring Petclinicという獣医ペットクリニックの管理を支援するために設計されたフレンドリーなAIアシスタントです。
+         あなたの仕事は、ユーザーのリクエストに応じて質問に答えたり、ユーザーの代わりにアクションを実行したりすることです。主に獣医、オーナー、オーナーのペット、オーナーの訪問に関するものです。
+         プロフェッショナルな態度で回答する必要があります。答えがわからない場合は、丁寧にユーザーに答えがわからないことを伝え、次にユーザーにフォローアップの質問をして、彼らが尋ねている質問を明確にしようとします。
+         答えがわかる場合は、答えを提供しますが、追加のフォローアップの質問は提供しません。
+         獣医に関しては、ユーザーが返された結果に不確かである場合、返されなかった追加のデータがある可能性があることを説明します。
+         すべての獣医の総数についてユーザーが尋ねている場合のみ、たくさんいると答え、追加の基準を求めます。
+         オーナー、ペット、または訪問に関しては、正しいデータを提供します。
         """).createMessage();
 
         UserMessage userMessage = new UserMessage(userPrompt);
@@ -124,7 +122,7 @@ public class ChatController {
 ```
 </details>
 
-### Test the Chatbot
+### チャットボットのテスト
 
 ```bash
 cd ~/spring-petclinic-chats-service
@@ -138,21 +136,21 @@ az containerapp up \
   --query properties.configuration.ingress.fqdn
 ```
 
-Once chats-service is running, you should be able to test the chatbot from the chat box on the application.
+chats-serviceが実行されている場合、アプリケーションのチャットボックスからチャットボットをテストできるはずです。
 
 ![PetClinic Chat](images/chat-1.png)
 
-## Function Calling with SpringAI
+## SpringAIを使用した関数呼び出し
 
-In this section, we will implement a basic RAG (Retrieval-Augmented Generation) pattern using Spring AI. The Retrieval-Augmented Generation (RAG) pattern is an industry standard approach to building applications that use large language models to reason over specific or proprietary data that is not already known to the large language model. This is critical because Azure Open AI model that we integrated in the previous step don't know anything about the PetClinic application.
+このセクションでは、Spring AIを使用して基本的なRAG（Retrieval-Augmented Generation）パターンを実装します。Retrieval-Augmented Generation（RAG）パターンは、特定のデータやプロプライエタリデータを使用して大規模言語モデルを活用するための業界標準のアプローチです。これは、前のステップで統合したAzure Open AIモデルがPetClinicアプリケーションについて何も知らないため、重要です。
 
-There are multiple ways to implement RAG, but we will use the simplest one. We will use the Spring AI's `FunctionCalling` class to call the Azure OpenAI model. The `FunctionCalling` class is a utility class that allows you to call a function with a given input and output. We will use this class to call the Azure OpenAI model with a given input and output.
+RAGを実装する方法は複数ありますが、最も簡単な方法を使用します。Spring AIの`FunctionCalling`クラスを使用して、Azure OpenAIモデルを呼び出します。`FunctionCalling`クラスは、指定された入力と出力を持つ関数を呼び出すためのユーティリティクラスです。このクラスを使用して、指定された入力と出力を持つAzure OpenAIモデルを呼び出します。
 
-### Writing List Owners Function
+### オーナーリスト関数の作成
 
-We will implement a function that lists all the owners in the PetClinic application. This function will be called by the Azure OpenAI model to retrieve the list of owners. 
+PetClinicアプリケーション内のすべてのオーナーをリストする関数を実装します。この関数は、Azure OpenAIモデルによって呼び出され、オーナーのリストを取得します。
 
-Full source code here:
+完全なソースコードはこちら：
 
 ```java
 package org.springframework.samples.petclinic.chats;
@@ -194,13 +192,13 @@ public class ChatController {
     @PostMapping("/chatclient")
     public String chat(@RequestBody String userPrompt) {
         Message systemMessage = new SystemPromptTemplate("""
-                                                                  You are a friendly AI assistant designed to help with the management of a veterinarian pet clinic called Spring Petclinic.
-                                                                  Your job is to answer questions about and to perform actions on the user's behalf, mainly around veterinarians, owners, owners' pets and owners' visits.
-                                                                  You are required to answer an a professional manner. If you don't know the answer, politely tell the user you don't know the answer, then ask the user a followup question to try and clarify the question they are asking.
-                                                                  If you do know the answer, provide the answer but do not provide any additional followup questions.
-                                                                  When dealing with vets, if the user is unsure about the returned results, explain that there may be additional data that was not returned.
-                                                                  Only if the user is asking about the total number of all vets, answer that there are a lot and ask for some additional criteria.
-                                                                  For owners, pets or visits - provide the correct data.
+                                                                  あなたはSpring Petclinicという獣医ペットクリニックの管理を支援するために設計されたフレンドリーなAIアシスタントです。
+                                                                  あなたの仕事は、ユーザーのリクエストに応じて質問に答えたり、ユーザーの代わりにアクションを実行したりすることです。主に獣医、オーナー、オーナーのペット、オーナーの訪問に関するものです。
+                                                                  プロフェッショナルな態度で回答する必要があります。答えがわからない場合は、丁寧にユーザーに答えがわからないことを伝え、次にユーザーにフォローアップの質問をして、彼らが尋ねている質問を明確にしようとします。
+                                                                  答えがわかる場合は、答えを提供しますが、追加のフォローアップの質問は提供しません。
+                                                                  獣医に関しては、ユーザーが返された結果に不確かである場合、返されなかった追加のデータがある可能性があることを説明します。
+                                                                  すべての獣医の総数についてユーザーが尋ねている場合のみ、たくさんいると答え、追加の基準を求めます。
+                                                                  オーナー、ペット、または訪問に関しては、正しいデータを提供します。
                                                                  """).createMessage();
 
         UserMessage userMessage = new UserMessage(userPrompt);
@@ -248,14 +246,14 @@ class OwnerService implements Function<Void, List<OwnerDetails>> {
 }
 ```
 
-Try with different questions regarding owners. 
+オーナーに関するさまざまな質問を試してみてください。
 
 ![PetClinic Chat](images/chat-2.png)
 ![PetClinic Chat](images/chat-3.png)
 ---
 
 
-## :notebook_with_decorative_cover: Summary
+## :notebook_with_decorative_cover: まとめ
 
-In this module, we have successfully integrated Azure OpenAI with our Spring Boot application to create a chatbot. We have also implemented a basic RAG pattern using Spring AI to retrieve the list of owners in the PetClinic application. By leveraging Azure OpenAI and Spring AI, we have demonstrated how to create AI-infused Java applications that can intelligently interact with users and perform complex tasks.
+このモジュールでは、Azure OpenAIをSpring Bootアプリケーションに統合してチャットボットを作成しました。また、Spring AIを使用して基本的なRAGパターンを実装し、PetClinicアプリケーション内のオーナーのリストを取得しました。Azure OpenAIとSpring AIを活用することで、ユーザーとインテリジェントに対話し、複雑なタスクを実行できるAIを組み込んだJavaアプリケーションを作成する方法を示しました。
 

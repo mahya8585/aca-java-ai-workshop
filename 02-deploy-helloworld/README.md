@@ -1,22 +1,21 @@
-# :rocket: 02 - Create a Hello World Spring Boot App and Deploy to Azure Container Apps
+# :rocket: 02 - Hello World Spring Bootアプリを作成し、Azure Container Appsにデプロイする
 
-# Objective
+# 目的
 
-In this module, we'll focus on four key objectives:
+このモジュールでは、以下の4つの主要な目的に焦点を当てます：
 
-1. :white_check_mark: Develop and Deploy a HelloWorld Spring Boot application on Azure Container Apps
-2. :bar_chart: Learn to monitor the logs through Azure CLI and Azure Portal
-3. :mag: Understand how to scale Azure Container Apps
-4. :airplane: Familiarize with the configuration of readiness probes and revision creation
+1. :white_check_mark: HelloWorld Spring Bootアプリケーションを開発し、Azure Container Appsにデプロイする
+2. :bar_chart: Azure CLIおよびAzureポータルを通じてログを監視する方法を学ぶ
+3. :mag: Azure Container Appsのスケーリング方法を理解する
+4. :airplane: レディネスプローブとリビジョン作成の設定に慣れる
 
-## Let's start by creating `helloworld` app
+## `helloworld`アプリを作成しましょう
 
-A popular method to create Spring Boot applications is to use Spring Initializer, which can be found
-at  [https://start.spring.io/](https://start.spring.io/).
+Spring Bootアプリケーションを作成する人気の方法は、Spring Initializerを使用することです。これは[https://start.spring.io/](https://start.spring.io/)で見つけることができます。
 
 ![Spring Initializr](images/spring-initializr.jpg)
 
-> If you are using Codespaces, follow these steps to create a new Spring Boot project.
+> Codespacesを使用している場合は、以下の手順に従って新しいSpring Bootプロジェクトを作成してください。
 
 ```bash
 mkdir helloworld
@@ -24,12 +23,9 @@ cd helloworld
 curl https://start.spring.io/starter.tgz -d dependencies=web,actuator,azure-support -d bootVersion=3.2.11 -d name=helloworld -d type=maven-project | tar -xzvf -
 ```
 
-> In the lab, we fix the Spring Boot version to be 3.2.11, and keep the default settings using the `com.example.demo`
-> package
+> このラボでは、Spring Bootのバージョンを3.2.11に固定し、`com.example.demo`パッケージを使用してデフォルト設定を維持します。
 
-In the `src/main/java/com/example/demo` directory, create a
-new file named `HelloController.java` in the same package as `DemoApplication.java` file with
-the following content:
+`src/main/java/com/example/demo`ディレクトリに移動し、`DemoApplication.java`ファイルと同じパッケージに`HelloController.java`という名前の新しいファイルを作成し、以下の内容を追加します：
 
 ```java
 package com.example.demo;
@@ -49,32 +45,29 @@ public class HelloController {
 
 ![Hello World](images/helloworld.jpg)
 
-## Test the project locally
+## プロジェクトをローカルでテストする
 
-Run the project:
+プロジェクトを実行します：
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-Requesting the `/hello` endpoint should return the "Hello from Azure Container Apps" message.
+`/hello`エンドポイントにリクエストを送信すると、「Hello from Azure Container Apps」というメッセージが返されるはずです。
 
 ![Hello World](images/helloworld-browser.jpg)
 
-The above step verifies that the hello-world app is running locally without issues.
+上記の手順により、hello-worldアプリがローカルで問題なく動作していることが確認されます。
 
-## Create and Deploy Spring Boot on Azure Container Apps
+## Spring BootをAzure Container Appsに作成してデプロイする
 
-Use the command below to create the app instance from CLI:
+以下のコマンドを使用してCLIからアプリインスタンスを作成します：
 
 ```bash
 az containerapp create --name helloworld --environment ${ACA_ENVIRONMENT_NAME} --source . --ingress external --target-port 8080 --query properties.configuration.ingress.fqdn
 ```
 
-This command deploys your Spring Boot project to Azure Container Apps. Internally, Azure Container Apps uses the Oryx
-Builder that relies on the Cloud Native Buildpack to build the container image. The `--query` parameter extracts the
-fully qualified domain name (FQDN) of the app instance, which is then used to access this instance. Here is an example
-of the output:
+このコマンドは、Spring BootプロジェクトをAzure Container Appsにデプロイします。内部的には、Azure Container AppsはOryx Builderを使用しており、Cloud Native Buildpackに依存してコンテナイメージをビルドします。`--query`パラメータは、アプリインスタンスにアクセスするために使用される完全修飾ドメイン名（FQDN）を抽出します。以下は出力の例です：
 
 ```bash
 Your container app helloworld has been created and deployed! Congrats!
@@ -85,17 +78,15 @@ Browse to your container app at: http://helloworld.yellowgrass-143599e3.southeas
 Stream logs for your container with: az containerapp logs show -n helloworld -g sandbox-rg
 
 See full output using: az containerapp show -n helloworld -g sandbox-rg
-````
+```
 
-The output indicates that the app was successfully deployed. The FQDN is
-`http://helloworld.yellowgrass-143599e3.southeastasia.azurecontainerapps.io`, which can be used to access the app
-instance.
+この出力は、アプリが正常にデプロイされたことを示しています。FQDNは`http://helloworld.yellowgrass-143599e3.southeastasia.azurecontainerapps.io`であり、このインスタンスにアクセスするために使用できます。
 
 ![Hello World](images/helloworld-aca.png)
 
-## View Logs with Azure CLI
+## Azure CLIでログを表示する
 
-Switch back to the terminal and run the below command to see the logs of the app instance
+ターミナルに戻り、以下のコマンドを実行してアプリインスタンスのログを表示します
 
 ```bash
 az containerapp logs show -n helloworld
@@ -114,24 +105,18 @@ az containerapp logs show -n helloworld
 {"TimeStamp": "2024-11-06T16:34:25.511+00:00", "Log": "INFO 1 --- [demo] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)"}
 ```
 
-## Viewing Logs in Azure Portal
+## Azureポータルでログを表示する
 
-Streaming the console output, as we tried earlier, can provide a more insight understanding of a microservice's current
-state.
-However, sometimes it's necessary to look further into the past logs or to look for something specific in the logs. This
-is easily done
-with Log Analytics.
+コンソール出力をストリーミングすることは、マイクロサービスの現在の状態をより深く理解するのに役立ちます。
+ただし、過去のログをさらに調べたり、特定のものをログで探し���りする必要がある場合があります。これはLog Analyticsを使用して簡単に行えます。
 
-[Open Azure Portal](https://portal.azure.com) and navigate to your container app `helloworld`. Click on "Logs". This is
-a shortcut to the Log Analytics workspace that was created earlier. If a tutorial appears, feel free to skip it for now.
+[Azureポータルを開く](https://portal.azure.com)し、`helloworld`コンテナアプリに移動します。「ログ」をクリックします。これは、以前に作成されたLog Analyticsワークスペースへのショートカットです。チュートリアルが表示された場合は、今はスキップしても構いません。
 
-This workspace allows you to run queries on the aggregated logs. The most common query is to get the latest log from a
-specific application:
+このワークスペースでは、集計されたログに対してクエリを実行できます。最も一般的なクエリは、特定のアプリケーションの最新のログを取得することです：
 
-__Important:__ Applications logs have a dedicated `ContainerAppConsoleLogs_CL` type.
+__重要：__ アプリケーションログには専用の`ContainerAppConsoleLogs_CL`タイプがあります。
 
-Here is how to get its 50 most recent logs of the `ContainerAppConsoleLogs_CL` type for the microservice we just
-deployed. Paste the following query into the query editor and click "Run".
+以下は、デプロイしたマイクロサービスの`ContainerAppConsoleLogs_CL`タイプの最新の50件のログを取得する方法です。以下のクエリをクエリエディタに貼り付けて「実行」をクリックします。
 
 ```sql
 ContainerAppConsoleLogs_CL
@@ -143,41 +128,32 @@ ContainerAppConsoleLogs_CL
 
 ![Query logs](images/loganalytics.png)
 
-> 💡 Remember that it can take around 1-2 minutes for the console output of an Azure Container Apps microservice to be
-> ingested into Log Analytics.
+> 💡 Azure Container Appsマイクロサービスのコンソール出力がLog Analyticsに取り込まれるまでに約1〜2分かかることを覚えておいてください。
 
-## Scaling Azure Container Apps
+## Azure Container Appsのスケーリング
 
-Azure Container Apps allows you to scale your containers based on your requirements. By default, ACA is set to scale
-from 0 to 10 replicas, and the default scaling rule uses HTTP scaling. Let's go to the Azure portal and check the Scale
-rule settings.
+Azure Container Appsでは、要件に応じてコンテナをスケーリングできます。デフォルトでは、ACAは0から10のレプリカにスケーリングするように設定されており、デフォルトのスケーリングルールはHTTPスケーリングを使用します。Azureポータルに移動して、スケールルールの設定を確認しましょう。
 
 ![Hello World](images/helloworld-scale.png)
 
-As shown in the image above, the default scaling rule is set to scale from 0 to 10 replicas. You can also see that the
-current number of replicas is 1. In case you don't want auto-scaling and want to set the number of replicas to a fixed
-number, you can use the below command to update the instance count.
+上の画像に示されているように、デフォルトのスケーリングルールは0から10のレプリカにスケーリングするように設定されています。また、現在のレプリカ数が1であることがわかります。自動スケーリングを望まず、レプリカ数を固定の数に設定したい場合は、以下のコマンドを使用してインスタンス数を更新できます。
 
 ```shell
 az containerapp update --name helloworld --min-replicas 1 --max-replicas 1
 ```
 
-## Create revision
+## リビジョンを作成する
 
-Zero-downtime deployment is a critical feature for any application. For example on Kubernetes, we achieve this by
-creating a new deployment and then updating the service to point to the new deployment. With Istio or Service Mesh in
-place, we can even do canary deployments with weight based routing.
+ゼロダウンタイムデプロイメントは、アプリケーションにとって重要な機能です。たとえば、Kubernetesでは、新しいデプロイメントを作成し、サービスを更新して新しいデプロイメントを指すことでこれを実現します。IstioやService Meshがある場合、重み付けルーティングを使用してカナリアデプロイメントを行うこともできます。
 
-Azure Container Apps supports this feature by creating a new revision of the app, which is then updated to the new revision. By default, Azure Container Apps is set to single revision mode. In this mode, the app isn't subjected to downtime when crafting a new revision. The existing active revision isn't deactivated until the new revision is prepared. If ingress is enabled, the current revision continues to receive 100% of the traffic until the new revision is ready.
+Azure Container Appsは、この機能をサポートしており、新しいリビジョンを作成し、その後新しいリビジョンに更新します。デフォルトでは、Azure Container Appsは単一リビジョンモードに設定されています。このモードでは、新しいリビジョンが準備されるまで、既存のアクティブなリビジョンは非アクティブ化されません。イングレスが有効になっている場合、現在のリビジョンは新しいリビジョンが準備されるまで100％のトラフィックを受け取り続けます。
 
-Here, we will do the small test to see how single revision mode works. **With the use of a liveness probe, we will intentionally cause the new revision to fail and see how the old revision continues to serve the traffic.**
+ここでは、単一リビジョンモードがどのように機能するかを確認するための小さなテストを行います。**レディネスプローブを使用して、新しいリビジョンが失敗するように意図的に設定し、古いリビジョンがトラフィックを継続して処理する様子を確認します。**
 
 <details markdown="block">
-**<summary>Use GitHub Copilot</summary>**
+**<summary>GitHub Copilotを使用する</summary>**
 
-Go to the previous `HelloController.java` and change the message in the `/hello` endpoint to see the difference between
-the old and new revision. Then add an endpoint `/readiness` to return HTTP code 500. Prompt GitHub Copilot to return HTTP
-code 500.
+前の`HelloController.java`に移動し、`/hello`エンドポイントのメッセージを変更して、古いリビジョンと新しいリビジョンの違いを確認します。その後、HTTPコード500を返すエンドポイント`/readiness`を追加します。GitHub CopilotにHTTPコード500を返すようにプロンプトを設定します。
 
 ```java
 package com.example.demo;
@@ -198,15 +174,14 @@ public class HelloController {
 }
 ```
 
-> Bear in mind that GitHub Copilot may not provide the correct code.
-> It is crucial for developers to understand how the prompt works and guide Copilot in the right direction. 
-> For example, you could start typing `public ResponseEntity` to prompt GitHub Copilot to the right direction instead of just put the prompt and wait.
-
+> GitHub Copilotが正しいコードを提供しない場合があることを覚えておいてください。
+> プロンプトがどのように機能するかを理解し、Copilotを正しい方向に導くことが重要です。
+> たとえば、`public ResponseEntity`と入力を開始して、GitHub Copilotを正しい方向に促すことができます。
 
 </details>
 
 <details markdown="block">
-**<summary>Write own code</summary>**
+**<summary>自分でコードを書く</summary>**
 
 ```java
 package com.example.demo;
@@ -236,41 +211,35 @@ public class HelloController {
 
 </details>
 
-Now, we will update the `helloworld` app and configure the liveness probe to `/readiness` endpoint. This will intentionally fail the new revision. Let's update the app using the command below
+次に、`helloworld`アプリを更新し、リビネスプローブを`/readiness`エンドポイントに設定します。これにより、新しいリビジョンが意図的に失敗します。以下のコマンドを使用してアプリを更新します
 
 ```shell
 az containerapp up --name helloworld --environment ${ACA_ENVIRONMENT_NAME} --source . --ingress external --target-port 8080 --query properties.configuration.ingress.fqdn
 ```
 
-We will change the liveness probe settings on Azure portal. Go to [Azure portal][https://portal.azure.com] and navigate
-to the `helloworld` Azure
-Container Apps. Click on the `Application` and then click on the `Containers`. Click on `Edit and Deploy` on the top,
-and
-then click on the container image.
+Azureポータルでリビネスプローブの設定を変更します。[Azureポータル](https://portal.azure.com)に移動し、`helloworld` Azure Container Appsに移動します。「アプリケーション」をクリックし、「コンテナ」をクリックします。上部の「編集してデプロイ」をクリックし、コンテナイメージをクリックします。
 
 ![Readiness Probe](images/readiness.png)
 
-Click on `Create` button in the bottom that will create a new revision. Now, Go to `Application` >
-`Revisions and replicas`. There will be two revisions there, and one of them is shown as `Activating`.
+下部の「作成」ボタンをクリックすると、新しいリビジョンが作成されます。次に、「アプリケーション」>「リビジョンとレプリカ」に移動します。そこには2つのリビジョンがあり、そのうちの1つは「アクティブ化中」と表示されます。
 
 ![Revisions](images/revision-1.png)
 
-The new revision will never be activated as we configured the readiness probe to fail intentionally. Let's check the system
-logs. Click on `View details`, then click on `View system log stream`
+新しいリビジョンは、意図的にリビネスプローブが失敗するように設定されているため、アクティブ化されることはありません。システムログを確認しましょう。「詳細を表示」をクリックし、「システムログストリームを表示」をクリックします。
 
 ![Revisions](images/revision-2.png)
 
-System logs shows that probes run against newly created revision are failing.
+システムログには、新しく作成されたリビジョンに対して実行されるプローブが失敗していることが表示されます。
 
 ![Revisions](images/revision-3.png)
 
-Before we proceed with the next step, you should revert the changes made to the liveness probe by deleting the liveness probe configuration. Find the revision that is failing and click on `Edit and Deploy` and remove the liveness probe.
+次のステップに進む前に、リビネスプローブの設定を削除して行った変更を元に戻す必要があります。失敗しているリビジョンを見つけ、「編集してデプロイ」をクリックし、リビネスプローブを削除します。
 
-## :notebook_with_decorative_cover: Summary
+## :notebook_with_decorative_cover: まとめ
 
-Congratulations, you have deployed your first Spring Boot app to Azure Container Apps! Up next, we will learn how to autoscale the Azure Container Apps using KEDA.
+おめでとうございます。最初のSpring BootアプリをAzure Container Appsにデプロイしました！次に、KEDAを使用してAzure Container Appsを自動スケーリングする方法を学びます。
 
 ---
 
 ➡️
-Up Next : [03 - Autoscaling with KEDA(Kubernetes-based Event Driven Autoscaler)](../03-use-keda-autoscaling/README.md)
+次へ : [03 - KEDA(Kubernetes-based Event Driven Autoscaler)を使用した自動スケーリング](../03-use-keda-autoscaling/README.md)
