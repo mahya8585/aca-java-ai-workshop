@@ -1,40 +1,36 @@
-# :rocket: Autoscaling with KEDA(Kubernetes-based Event Driven Autoscaler)
+# :rocket: KEDA(Kubernetesベースのイベント駆動型オートスケーラー)を使用したオートスケーリング
 
-## Objective
+## 目的
 
-In this module, we'll focus on three key objectives:
+このモジュールでは、以下の3つの主要な目的に焦点を当てます：
 
-1. :white_check_mark: Learn about KEDA (Kubernetes Event-Driven Autoscaler)
-2. :bar_chart: Create a different scaling rule
-3. :mag: Test scaling of Azure Container Apps
+1. :white_check_mark: KEDA (Kubernetes Event-Driven Autoscaler)について学ぶ
+2. :bar_chart: 異なるスケーリングルールを作成する
+3. :mag: Azure Container Appsのスケーリングをテストする
 
-## Auto-scaling Options on Azure Container Apps
+## Azure Container Appsのオートスケーリングオプション
 
-On Azure Container Apps, there are three different categories
-of [scaling triggers](https://learn.microsoft.com/en-us/azure/container-apps/scale-app?pivots=azure-cli).
+Azure Container Appsでは、3つの異なるカテゴリの[スケーリングトリガー](https://learn.microsoft.com/ja-jp/azure/container-apps/scale-app?pivots=azure-cli)があります。
 
-1. HTTP: Based on the number of concurrent HTTP requests to your revision.
-2. TCP: Based on the number of concurrent TCP connections to your revision.
-3. Custom(KEDA based): Based on CPU, memory, or supported event-driven data sources such as:
+1. HTTP: リビジョンへの同時HTTPリクエストの数に基づいてスケーリングします。
+2. TCP: リビジョンへの同時TCP接続の数に基づいてスケーリングします。
+3. カスタム(KEDAベース): CPU、メモリ、または以下のようなサポートされているイベント駆動型データソースに基づいてスケーリングします：
 
 - Azure Service Bus
 - Azure Event Hubs
 - Apache Kafka
 - Redis
-- and many more
+- その他多数
 
-Custom scaling trigger uses KEDA under the hood which we'll discuss more in following chapters.
+カスタムスケーリングトリガーは、内部でKEDAを使用します。これについては、次の章で詳しく説明します。
 
-> :warning: **Please note, adding or altering scaling rules creates a new revision of your container app.**
+> :warning: **スケーリングルールを追加または変更すると、コンテナアプリの新しいリビジョンが作成されることに注意してください。**
 
-## HTTP Scaling Rule
+## HTTPスケーリングルール
 
-With HTTP scaling rule, you have control over the threshold of concurrent HTTP requests that determines how your
-container app revision scales. Every 15 seconds, the number of concurrent requests is calculated as the number of
-requests in the past 15 seconds divided by 15. For the workshop, Let's set the concurrency level as 1, so we can easily simulate the
-scaling with our own browser.
+HTTPスケーリングルールでは、コンテナアプリのリビジョンがスケーリングされる同時HTTPリクエストのしきい値を制御できます。15秒ごとに、過去15秒間のリクエスト数を15で割った値として同時リクエスト数が計算されます。ワークショップのために、同時実行レベルを1に設定し、ブラウザで簡単にスケーリングをシミュレートできるようにしましょう。
 
-The scaling rule can be updated using Azure CLI or via the Azure portal. Here's how to do it with CLI:
+スケーリングルールは、Azure CLIまたはAzureポータルを使用して更新できます。CLIを使用する方法は次のとおりです：
 
 ```bash
 az containerapp update \
@@ -46,7 +42,7 @@ az containerapp update \
   --scale-rule-http-concurrency 1
 ```
 
-Open the terminal and run `az containerapp logs` to see the increase of replicas.
+ターミナルを開き、`az containerapp logs`を実行してレプリカの増加を確認します。
 
 ```bash
 az containerapp logs show \
@@ -55,42 +51,34 @@ az containerapp logs show \
   --follow=true
 ```
 
-![System Logs showing the replica no changes](images/http-1.png)
+![システムログに表示されるレプリカの変更](images/http-1.png)
 
-Navigate to [Azure Portal](https://portal.azure.com) and check the `Revisions and replicas`. in `Replicas`, you should be able
-to see multiple replicas.
+[Azureポータル](https://portal.azure.com)に移動し、`Revisions and replicas`を確認します。`Replicas`では、複数のレプリカが表示されるはずです。
 
-![System Logs showing the replica no changes](images/http-2.png)
+![システムログに表示されるレプリカの変更](images/http-2.png)
 
-In the Metrics, we can see the total requests per replica.
+メトリクスでは、レプリカごとの総リクエスト数を確認できます。
 
-![System Logs showing the replica no changes](images/http-3.png)
+![システムログに表示されるレプリカの変更](images/http-3.png)
 
+## KEDAとは何か？
 
-## What is KEDA?
+**KEDA**は、Kubernetesベースのイベント駆動型オートスケーラーです。KEDAを使用すると、処理する必要のあるイベントの数に基づいてKubernetes内の任意のコンテナのスケーリングを駆動できます。
 
-**KEDA** is a Kubernetes-based Event Driven Autoscaler. With KEDA, you can drive the scaling of any container in
-Kubernetes based on the number of events needing to be processed.
+**KEDA**は、単一目的の軽量コンポーネントであり、任意のKubernetesクラスターに追加できます。KEDAは、Horizontal Pod Autoscalerなどの標準的なKubernetesコンポーネントと連携し、機能を拡張できます。KEDAを使用すると、イベント駆動型スケーリングを使用するアプリを明示的にマッピングでき、他のアプリは引き続き機能します。これにより、KEDAは他のKubernetesアプリケーションやフレームワークと並行して実行するための柔軟で安全なオプションとなります。
 
-**KEDA** is a single-purpose and lightweight component that can be added into any Kubernetes cluster. KEDA works
-alongside standard Kubernetes components like the Horizontal Pod Autoscaler and can extend functionality without
-overwriting or
-duplication. With KEDA you can explicitly map the apps you want to use event-driven scale, with other apps continuing to
-function. This makes KEDA a flexible and safe option to run alongside any number of any other Kubernetes applications or
-frameworks.
+## Azure Service Busスケーリングルール
 
-## Azure Service Bus Scaling Rule
-
-Next, we will be testing our custom scaling rule using the Azure Service Bus. Firstly, we need to find the connection string and queue name of the Azure Service Bus which we created in the earlier module. Queue name is `keda` and connection string can be found in the Azure Portal.
+次に、Azure Service Busを使用してカスタムスケーリングルールをテストします。まず、前のモジュールで作成したAzure Service Busの接続文字列とキュー名を見つける必要があります。キュー名は`keda`であり、接続文字列はAzureポータルで確認できます。
 
 ![Service Bus Managed Key](images/servicebus-1.png)
 
-**Now it's decision-making time! Choose the scenario you want to follow. Scenario 1 is to use GitHub Copilot to create the Azure Service Bus publisher. If you choose this scenario, you might like to go through the second scenario as well. If you choose Scenario 2, check the scenario first. If you want to see how GitHub Copilot can help in the development process, go through the first scenario as well.**
+**ここで、どのシナリオを選択するかを決定します。シナリオ1は、GitHub Copilotを使用してAzure Service Busパブリッシャーを作成するシナリオです。このシナリオを選択する場合は、シナリオ2も確認することをお勧めします。シナリオ2を選択する場合は、まずシナリオを確認してください。GitHub Copilotが開発プロセスでどのように役立つかを確認したい場合は、シナリオ1も確認してください。**
 
 <details markdown="block">
-<summary>:rocket: Scenario 1 - Use GitHub Copilot to create Azure Service Bus publisher</summary>
+<summary>:rocket: シナリオ1 - GitHub Copilotを使用してAzure Service Busパブリッシャーを作成する</summary>
 
-First step is to add Azure Service Bus dependency to your `pom.xml` file. Open the `pom.xml` file and add the following:
+最初のステップは、`pom.xml`ファイルにAzure Service Busの依存関係を追加することです。`pom.xml`ファイルを開き、次の内容を追加します：
 
 ```xml
 		<dependency>
@@ -101,13 +89,13 @@ First step is to add Azure Service Bus dependency to your `pom.xml` file. Open t
 
 ```
 
-We will generate the code using GitHub Copilot Chat with small prompt engineering. Look at the following screen capture. 
+GitHub Copilot Chatを使用してコードを生成します。以下のスクリーンキャプチャを参照してください。
 
 ![Copilot Chat with Prompt](images/ghcp-1.png)
 
-Two important details to note here: 
-1. Two tabs are opened, `pom.xml` and `HelloController.java`.
-2. The actual prompt in the GitHub Copilot Chat is as below, 
+ここで重要な詳細は次の2つです：
+1. `pom.xml`と`HelloController.java`の2つのタブが開かれています。
+2. GitHub Copilot Chatの実際のプロンプトは次のとおりです：
 ```plaintext
 1. Create an RESTful endpoint "/message" and read the Path Variable following the endpoint. Endpoint should be GET method.
 2. Send received message to Azure Service Bus Queue using client.
@@ -115,7 +103,7 @@ Two important details to note here:
 4. Suggest properties in application.properties for Azure Service Bus client.
 ```
 
-Generated code would look like below. **NOTE**: GitHub Copilot synthesizes the code based on the prompt everytime, so your code may look different. 
+生成されたコードは次のようになります。**注意**：GitHub Copilotはプロンプトに基づいてコードを合成するため、コードは異なる場合があります。
 
 ```java
 package com.example.demo;
@@ -157,34 +145,34 @@ public class HelloController {
 }
 ```
 
-GitHub Copilot must have suggested to add the following properties to `application.properties` file. Use the values that we make a note in the previous step.
+GitHub Copilotは、`application.properties`ファイルに次のプロパティを追加するように提案するはずです。前のステップでメモした値を使用してください。
 
 ```properties
 azure.servicebus.connection-string=YOUR_SERVICE_BUS_CONNECTION_STRING
 azure.servicebus.queue-name=YOUR_QUEUE_NAME
 ```
 
-Now, run the application and test the new REST endpoint as below. If invoked correctly, you should see a message similar to below.
+次に、アプリケーションを実行し、新しいRESTエンドポイントを次のようにテストします。正しく呼び出された場合、次のようなメッセージが表示されるはずです。
 
 ![New REST endpoint](images/servicebus-2.png)
 
-Verify the messages enqueued in the Azure Service Bus Queue. You can view the enqueued messages in the Azure Portal. Go to the Azure Portal, find the Service Bus Queue, and click on the `Service Bus Explorer`. It provides a `Peek Mode` to view the messages in the queue. Click on the `Peek from start` to see all the messages in the queue.
+Azure Service Busキューにエンキューされたメッセージを確認します。Azureポータルでエンキューされたメッセージを表示できます。Azureポータルに移動し、Service Busキューを見つけ、`Service Bus Explorer`をクリックします。`Peek Mode`を使用してキュー内のメッセージを表示できます。`Peek from start`をクリックして、キュー内のすべてのメッセージを表示します。
 
 ![Peek Mode](images/servicebus-3.png)
 </details>
 
 <details markdown="block">
-<summary>:rocket: Scenario 2 - Manually Publish Messages into Azure Service Bus Queue</summary>
+<summary>:rocket: シナリオ2 - 手動でAzure Service Busキューにメッセージを公開する</summary>
 
-On Azure Portal, navigate to the Service Bus Queue and click on the `Service Bus Explorer`. There is `Send Messages` button on the top to send messages to the queue. `Repeat Send` button can be used to send multiple messages at once.
+Azureポータルで、Service Busキューに移動し、`Service Bus Explorer`をクリックします。上部にある`Send Messages`ボタンをクリックして、キューにメッセージを送信します。`Repeat Send`ボタンを使用して、一度に複数のメッセージを送信できます。
 
 ![Sens Messages](images/servicebus-4.png)
 
 </details>
 
-We're ready to publish messages into the Azure Service Bus Queue. KEDA needs a connection string to connect to the Azure Service Bus. Ideally, we should use managed identity minimize the security risk. However, for the simplicity, we will use the connection string. We will discuss about managed identity in detail in the following modules.
+Azure Service Busキューにメッセージを公開する準備が整いました。KEDAはAzure Service Busに接続するために接続文字列を必要とします。理想的には、セキュリティリスクを最小限に抑えるためにマネージドIDを使用するべきです。しかし、簡単のために接続文字列を使用します。マネージドIDについては、次のモジュールで詳��く説明します。
 
-Create a secret in the Azure Container Apps to securely store the connection string. Insert the correct connection string in the following command. 
+Azure Container Appsに接続文字列を安全に保存するためのシークレットを作成します。次のコマンドに正しい接続文字列を挿入します。
 
 ```bash
 az containerapp secret set \
@@ -192,19 +180,19 @@ az containerapp secret set \
         --secrets service-bus-connection-string="Endpoint=..."
 ````
 
-We're going to restart the container app to apply new secret to Azure Container Apps. First, find the active revision. 
+コンテナアプリを再起動して、新しいシークレットをAzure Container Appsに適用します。まず、アクティブなリビジョンを見つけます。
 
 ```bash
 az containerapp revision list -n helloworld -o table
 ````
 
-Then restart the active revision. For example:
+次に、アクティブなリビジョンを再起動します。例：
 
 ```bash
 az containerapp revision restart -n helloworld --revision helloworld--50kr6mp
 ```
 
-Once the container app is restarted, we can create a scaling rule using Azure CLI.
+コンテナアプリが再起動されたら、Azure CLIを使用してスケーリングルールを作成できます。
 
 ```bash
 az containerapp update \
@@ -219,7 +207,7 @@ az containerapp update \
   --scale-rule-auth "connection=service-bus-connection-string"
 ```
 
-The scaling rule has been created. Now, try publishing messages into the Azure Service Bus Queue. You should see the scaling of the container app. Also, delete the messages in the queue to see the decreases of the replicas.
+スケーリングルールが作成されました。次に、Azure Service Busキューにメッセージを公開してみてください。コンテナアプリのスケーリングが確認できるはずです。また、キュー内のメッセージを削除してレプリカの減少を確認します。
 
 ```bash
 az containerapp revision list -n helloworld -o table
@@ -228,19 +216,18 @@ CreatedTime                Active    Replicas    TrafficWeight    HealthState   
 2024-11-17T01:06:02+00:00  True      4           100              Healthy        Provisioned          helloworld--az242pu
 ```
 
-
-> 💡 __Note:__ If scaling does not perform as expected, check the logs to find out the reason. navigate to Azure Portal and check the logs in `Logs` section.
+> 💡 __注意:__ スケーリングが期待通りに動作しない場合は、ログを確認して原因を特定してください。Azureポータルに移動し、`Logs`セクションでログを確認します。
 > ```kusto
 > ContainerAppSystemLogs_CL
 > | where Reason_s == "KEDAScalerFailed"
 >| project TimeGenerated, ContainerAppName_s, ReplicaName_s, Log_s, Reason_s
 >```
 
-## :notebook_with_decorative_cover: Summary
+## :notebook_with_decorative_cover: まとめ
 
-In this module, we learned about KEDA and how to create a scaling rule using Azure CLI. We tested the scalability of our setup with Azure Service Bus. Up next, we will create a managed Java component on Azure Container Apps.
+このモジュールでは、KEDAについて学び、Azure CLIを使用してスケーリングルールを作成する方法を学びました。Azure Service Busを使用してスケーリングのテストを行いました。次に、Azure Container AppsでマネージドJavaコンポーネントを作成する方法を学びます。
 
 ---
 
 :arrow_forward:
-Up Next : [04 - Create Managed Java Component on Azure Container Apps](../04-create-managed-java-component/README.md)
+次へ : [04 - Azure Container AppsでマネージドJavaコンポーネントを作成する](../04-create-managed-java-component/README.md)

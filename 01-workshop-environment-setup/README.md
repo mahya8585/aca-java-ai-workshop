@@ -1,37 +1,33 @@
-# :rocket: 01 - Set Up Your Environment for the Workshop
+# :rocket: 01 - ワークショップのための環境をセットアップする
 
-To ensure a smooth workshop experience, we need to set up your environment correctly. This includes creating an Azure
-subscription using the provided Azure pass and preparing your code environment with the necessary tools.
+ワークショップをスムーズに進行するためには、環境を正しくセットアップする必要があります。これには、提供されたAzureパスを使用してAzureサブスクリプションを作成し、必要なツールを使用してコード環境を準備することが含まれます。
 
-## Redeem Your Azure Pass
+## Azure Passを引き換える
 
-Your Azure Pass provides a $100 USD credit for you to use with Azure, enabling you to create various resources as part
-of this workshop. Follow these steps to redeem your pass:  
+Azure Passは、Azureで使用するための100ドルのクレジットを提供し、このワークショップの一環としてさまざまなリソースを作成することができます。以下の手順に従ってパスを引き換えてください：
 
-
-1. Open a new private browser window. This ensures you don't accidentally link the Azure pass to an existing Microsoft Account or work account. Navigate to the [Microsoft Azure Pass](https://www.microsoftazurepass.com/) website and click the "Start" button.
+1. 新しいプライベートブラウザウィンドウを開きます。これにより、Azureパスを既存のMicrosoftアカウントや職場のアカウントに誤ってリンクすることを防ぎます。[Microsoft Azure Pass](https://www.microsoftazurepass.com/)のウェブサイトにアクセスし、「Start」ボタンをクリックします。
 
    ![Azure Pass](images/image01.png "Azure Pass")
 
-2. Create a new Azure Account.
+2. 新しいAzureアカウントを作成します。
 
    ![Azure Pass](images/image02.png "Azure Pass")
    ![Azure Pass](images/image03.png "Azure Pass")
 
-3. Enter the provided Promo Code.
+3. 提供されたプロモーションコードを入力します。
 
    ![Azure Pass](images/image04.png "Azure Pass")
 
-Upon successful redemption, you'll have a newly setup Azure subscription.
+パスの引き換えが成功すると、新しいAzureサブスクリプションが設定されます。
 
-## Prepare Your Code Environment for the Workshop
+## ワークショップのためのコード環境を準備する
 
-To prepare your code environment for the workshop, you need to install the following tools:
+ワークショップのためのコード環境を準備するには、以下のツールをインストールする必要があります。
 
 1. [JDK 17](https://docs.microsoft.com/java/openjdk/download?WT.mc_id=azurespringcloud-github-judubois#openjdk-17)
-2. VSCode, or IntelliJ for GitHub Copilot
-3. [Azure CLI version 2.64.0 or higher](https://docs.microsoft.com/cli/azure/install-azure-cli?view=azure-cli-latest).
-   You can check the version of your current Azure CLI installation by running:
+2. VSCode、または IntelliJ for GitHub Copilot
+3. [Azure CLIバージョン2.64.0以上](https://docs.microsoft.com/cli/azure/install-azure-cli?view=azure-cli-latest)。現在のAzure CLIインストールのバージョンを確認するには、以下のコマンドを実行します：
 
     ```bash
     az --version
@@ -39,27 +35,23 @@ To prepare your code environment for the workshop, you need to install the follo
 
 4. [Azure Developer CLI](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd?tabs=winget-windows%2Cbrew-mac%2Cscript-linux&pivots=os-windows)
 
-## Log In with Azure CLI
+## Azure CLIでログインする
 
-Signing In with Azure CLI Login to Azure from the CLI with the following command, and complete the prompts to
-authenticate:
-
+次のコマンドを使用して CLI から Azure にログインし、プロンプトに従って認証します。
 ```bash
 az login
 ```
 
-Next, install or update the necessary Azure CLI extensions for our labs
+次に、本ワークショップに必要なAzure CLI拡張機能をインストールまたは更新します。
 
 ```bash
 az extension add --name containerapp --upgrade --allow-preview true
 az extension add --name serviceconnector-passwordless --upgrade --allow-preview true
 ```
 
-Azure resource providers is to enable functionality for a specific Azure service. Some resource providers are
-registered by default. For a list of resource providers registered by default, see Resource providers
-for [Azure services](https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/azure-services-resource-providers).
+Azureリソースプロバイダーは、特定のAzureサービスの機能を有効にするためのものです。一部のリソースプロバイダーはデフォルトで登録されています。デフォルトで登録されているリソースプロバイダーのリストについては、[Azureサービスのリソースプロバイダー](https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/azure-services-resource-providers)を参照してください。
 
-Let's register the required Azure resource providers for our labs:
+本ワークショップに必要なAzureリソースプロバイダーを登録します。
 
 ```bash
 az config set extension.use_dynamic_install=yes_without_prompt
@@ -68,16 +60,16 @@ az provider register --namespace Microsoft.OperationalInsights
 az provider register --namespace Microsoft.ServiceLinker
 ```
 
-## Prepare Your Azure Environment
+## Azure環境を準備する
 
-This workshop provides Bicep templates to deploy the necessary resources to Azure. In case you're using your own laptop, please git clone the project first. If you're using GitHub Codespaces, the project is already cloned for you so you don't need to do anything. 
+このワークショップでは、Azureに必要なリソースをデプロイするためのBicepテンプレートを提供しています。ご自身のパソコンを使用している場合は、まずプロジェクトをクローンしてください。GitHub Codespacesを使用している場合は、プロジェクトはすでにクローンされているので、何もする必要はありません。
 
 ```bash
 git clone https://github.com/eggboy/aca-java-ai-workshop
 cd aca-java-ai-workshop
 ```
 
-Run the following command to deploy the necessary resources to Azure. This is an example of outputs:
+以下のコマンドを実行して、Azureに必要なリソースをデプロイします。以下は出力の例です。
 
 ```bash
 azd up
@@ -109,18 +101,18 @@ Deploying services (azd deploy)
 SUCCESS: Your up workflow to provision and deploy to Azure completed in 8 minutes 3 seconds.
 ```
 
-This will create resources in your Azure subscription, including:
-1. Resource Group
-2. Log Analytics workspace
-3. Azure OpenAI Endpoint
-4. Azure Container Apps Environment
+これにより、Azureサブスクリプションに以下のリソースが作成されます。
+1. リソースグループ
+2. Log Analyticsワークスペース
+3. Azure OpenAIエンドポイント
+4. Azure Container Apps環境
 5. Azure Database for MySQL Flexible Server
 
-`azd up` will return the name of resources created in your Azure subscription. Please go to [Azure Portal](https://portal.azure.com) to verify the resources in the resource gorup `aca-labs`
+`azd up`は、Azureサブスクリプションに作成されたリソースの名前を返します。[Azure Portal](https://portal.azure.com)にアクセスして、リソースグループ`aca-labs`内のリソースを確認してください。
 
-## Configure default settings for Azure Container Apps
+## Azure Container Appsのデフォルト設定を構成する
 
-> [!IMPORTANT] To ensure easy access to Azure Container Apps, set your default settings:
+> [!IMPORTANT] Azure Container Appsへの簡単なアクセスを確保するために、デフォルト設定を構成してください。
 > ```bash
 > az configure --defaults location=koreacentral group=aca-labs
 > ```
@@ -128,4 +120,4 @@ This will create resources in your Azure subscription, including:
 ---
 
 ➡️
-Up Next : [02 - Create a Hello World Spring Boot App and Deploy to Azure Container Apps](../02-deploy-helloworld/README.md)
+次へ : [02 - Hello World Spring Bootアプリを作成し、Azure Container Appsにデプロイする](../02-deploy-helloworld/README.md)
